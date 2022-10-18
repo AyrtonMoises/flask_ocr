@@ -1,0 +1,22 @@
+<div>
+    <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Arquivo</th>
+            <th scope="col">CPF</th>
+            <th scope="col">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+            {% for leitura in leituras %}
+          <tr>
+            <th scope="row">{{ leitura._id }}</th>
+            <td>{{ leitura.arquivo }}</td>
+            <td>{{ leitura.cpf }}</td>
+            <td>{{ leitura.status }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+</div>

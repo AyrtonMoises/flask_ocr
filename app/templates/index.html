@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+{% include 'navbar.html'%}
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+    {% for message in messages %}
+    <script>
+     alert('{{ message }}')
+    </script>
+    {% endfor %}
+{% endif %}
+{% endwith %}
+
+<div class="container">
+    {% include 'formulario.html' %}
+    {% include 'lista.html' %}
+</div>
+
+{% endblock %}

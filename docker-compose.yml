@@ -1,0 +1,121 @@
+version: '3.3'
+
+services:
+
+  nginx:
+      build:
+        context: .
+        dockerfile: ./nginx/nginx.dockerfile
+      volumes:
+        - file_volume:/app/arquivos
+      ports:
+      - "81:80"
+      networks:
+      - minha-network
+      depends_on:
+      - web
+      restart: on-failure
+
+  web:
+    build:
+        dockerfile: ./app/flask.prod.dockerfile
+        context: .
+    container_name: flask_ocr
+    ports:
+      - 5000
+    environment:
+      SECRET_KEY: SUA_SECRET_KEY
+      MONGO_USER: mongo-user
+      MONGO_PASSWORD: mongo-password
+      MONGO_DATABASE: flask_ocr_prod
+      BROKER_URI: amqp://rbmq-user:rbmq-password@rabbitmq:5672
+      REDIS_BACKEND: redis://redis:6379
+    volumes:
+      - file_volume:/app/arquivos
+    command: gunicorn --bind 0.0.0.0:5000 wsgi:app
+    networks:
+    - minha-network
+    depends_on: 
+    - mongodb
+
+  worker:
+    build:
+        dockerfile: ./app/flask.dev.dockerfile
+        context: .
+    command: celery -A celery_worker.celery worker -l info --pool solo
+    environment:
+      SECRET_KEY: SUA_SECRET_KEY
+      MONGO_USER: mongo-user
+      MONGO_PASSWORD: mongo-password
+      MONGO_DATABASE: flask_ocr_prod
+      BROKER_URI: amqp://rbmq-user:rbmq-password@rabbitmq:5672
+      REDIS_BACKEND: redis://redis:6379
+    volumes:
+      - file_volume:/app/arquivos
+    networks: 
+    - minha-network
+    depends_on:
+      - mongodb
+      - rabbitmq
+      - redis
+
+  flower:
+    image: mher/flower
+    environment:
+      - CELERY_BACKEND_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=amqp://rbmq-user:rbmq-password@rabbitmq:5672
+      - FLOWER_PORT=5555
+    ports:
+      - 5555:5555
+    networks: 
+    - minha-network
+    depends_on:
+      - worker
+      - rabbitmq
+      - redis
+
+  mongodb:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo-user
+      MONGO_INITDB_ROOT_PASSWORD: mongo-password
+      MONGODB_DATA_DIR: /data/db
+      MONDODB_LOG_DIR: /dev/null
+    volumes:
+      - mongodbdata:/data/db
+    networks: 
+    - minha-network
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: rbmq-user
+      RABBITMQ_DEFAULT_PASS: rbmq-password 
+    ports:
+        - 5672
+        - 15673:15672
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq/
+      - rabbitmq_log:/var/log/rabbitmq/
+    networks: 
+    - minha-network
+
+  redis:
+    image: redis:6-alpine
+    ports:
+      - 6379
+    networks: 
+    - minha-network
+
+volumes:
+  mongodbdata:
+  rabbitmq_data:
+  rabbitmq_log:
+  file_volume:
+
+networks: 
+    minha-network:
+        driver: bridge
+
+    
