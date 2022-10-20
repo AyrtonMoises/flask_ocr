@@ -4,7 +4,7 @@ services:
 
   web:
     build:
-        dockerfile: ./app/flask.dev.dockerfile
+        dockerfile: ./web/flask.dev.dockerfile
         context: .
     container_name: flask_ocr
     ports:
@@ -17,7 +17,8 @@ services:
       BROKER_URI: amqp://rbmq-user:rbmq-password@rabbitmq:5672
       REDIS_BACKEND: redis://redis:6379
     volumes:
-      - ./app:/app
+      - ./web/app:/app
+      - file_volume_dev:/app/arquivos
     command: flask --app app --debug run --host=0.0.0.0
     networks:
     - minha-network
@@ -28,7 +29,7 @@ services:
 
   worker:
     build:
-        dockerfile: ./app/flask.dev.dockerfile
+        dockerfile: ./web/flask.dev.dockerfile
         context: .
     command: celery -A celery_worker.celery worker -l info --pool solo
     environment:
@@ -39,7 +40,8 @@ services:
       BROKER_URI: amqp://rbmq-user:rbmq-password@rabbitmq:5672
       REDIS_BACKEND: redis://redis:6379
     volumes:
-      - ./app:/app
+      - ./web/app:/app
+      - file_volume_dev:/app/arquivos
     networks: 
     - minha-network
     depends_on:
@@ -102,6 +104,7 @@ volumes:
   mongodbdata:
   rabbitmq_data:
   rabbitmq_log:
+  file_volume_dev:
 
 networks: 
     minha-network:

@@ -21,7 +21,7 @@ docker-compose down
 
 ### Testes
 ```
-docker-compose -f docker-compose-dev.yml run web python -m pytest tests
+docker-compose -f docker-compose-dev.yml run web python -m pytest tests -p no:cacheprovider
 ```
 
 ###  Flask (Visualizar e enviar imagens para fila de OCR)
